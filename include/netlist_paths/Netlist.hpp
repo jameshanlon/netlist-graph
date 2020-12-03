@@ -95,6 +95,7 @@ public:
   //===--------------------------------------------------------------------===//
 
   VertexIDVec readWaypoints(Waypoints waypoints) const;
+  VertexIDVec readAvoidPoints(Waypoints waypoints) const;
 
   //===--------------------------------------------------------------------===//
   // Basic path querying.
@@ -115,13 +116,15 @@ public:
   /// Return a Boolean to indicate whether any path exists between two points.
   bool pathExists(Waypoints waypoints) {
     auto waypointIDs = readWaypoints(waypoints);
-    return !netlist.getAnyPointToPoint(waypointIDs).empty();
+    auto avoidPointIDs = readAvoidPoints(waypoints);
+    return !netlist.getAnyPointToPoint(waypointIDs, avoidPointIDs).empty();
   }
 
   /// Return any path between two points.
   std::vector<Vertex*> getAnyPath(Waypoints waypoints) {
     auto waypointIDs = readWaypoints(waypoints);
-    return createVertexPtrVec(netlist.getAnyPointToPoint(waypointIDs));
+    auto avoidPointIDs = readAvoidPoints(waypoints);
+    return createVertexPtrVec(netlist.getAnyPointToPoint(waypointIDs, avoidPointIDs));
   }
 
   /// Return any path between two points.

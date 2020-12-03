@@ -8,6 +8,7 @@ namespace netlist_paths {
 
 class Waypoints {
   std::vector<std::string> waypoints;
+  std::vector<std::string> avoidPoints;
   bool got_start_point;
   bool got_finish_point;
 
@@ -53,10 +54,12 @@ public:
     }
   }
 
-  std::vector<std::string>::iterator begin() { return waypoints.begin(); }
-  std::vector<std::string>::iterator end() { return waypoints.end(); }
-  bool empty() const { return waypoints.empty(); }
-  size_t size() const { return waypoints.size(); }
+  void addAvoidPoint(const std::string name) {
+    avoidPoints.push_back(name);
+  }
+
+  const std::vector<std::string> &getWaypoints() const { return waypoints; }
+  const std::vector<std::string> &getAvoidPoints() const { return avoidPoints; }
 };
 
 }; // End namespace.
