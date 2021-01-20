@@ -84,13 +84,30 @@ void Graph::mergeAssignAliasNodes() {
       }
       DEBUG(std::cout << boost::format("Assign alias: replacing %s with %s\n")
                            % graph[varToReplace].getName() % graph[varToUse].getName());
+      // Determine the nodes with in and out edges to the var to replace node.
+      sources.clear();
+      targets.clear();
       BGL_FORALL_INEDGES(varToReplace, inEdge, graph, InternalGraph) {
-        boost::add_edge(boost::source(inEdge, graph), varToUse, graph);
+        sources.push_back(boost::source(inEdge, graph));
       }
       BGL_FORALL_OUTEDGES(varToReplace, outEdge, graph, InternalGraph) {
-        boost::add_edge(varToUse, boost::target(outEdge, graph), graph);
+        targets.push_back(boost::target(outEdge, graph));
       }
-      boost::remove_vertex(varToReplace, graph);
+      // Update edges while not iterating.
+      for (auto source : sources) {
+        boost::remove_edge(source, v, graph);
+        boost::add_edge(source, varToUse, graph);
+      }
+      for (auto target : targets) {
+        boost::remove_edge(varToReplace, target, graph);
+        boost::add_edge(varToUse, target, graph);
+      }
+      // Just mark the vertex as deleted.
+      // If the vertex was a REG then transfer this.
+      if (graph[varToReplace].isDstReg()) {
+        graph[varToUse].setDstReg();
+      }
+      graph[varToReplace].setDeleted();
       count++;
     }
   }
