@@ -55,6 +55,48 @@ public:
   }
 };
 
+void Graph::mergeAssignAliasNodes() {
+  size_t count = 0;
+  BGL_FORALL_VERTICES(v, graph, InternalGraph) {
+    if (graph[v].getAstType() == VertexAstType::ASSIGN_ALIAS) {
+      std::vector<VertexID> sources;
+      std::vector<VertexID> targets;
+      BGL_FORALL_INEDGES(v, inEdge, graph, InternalGraph) {
+        sources.push_back(boost::source(inEdge, graph));
+      }
+      BGL_FORALL_OUTEDGES(v, outEdge, graph, InternalGraph) {
+        targets.push_back(boost::target(outEdge, graph));
+      }
+      assert(targets.size() == 1);
+      if (sources.size() > 1) {
+        DEBUG(std::cout << boost::format("srcs %d\n") % sources.size());
+        continue;
+      }
+      VertexID varToReplace = sources.front();
+      VertexID varToUse = targets.front();
+      if (varToReplace == varToUse) {
+        // Self alias.
+        continue;
+      }
+      if (graph[varToReplace].getName().find("__Vcell") == std::string::npos) {
+        // Only merge Verilator-generated source variables.
+        continue;
+      }
+      DEBUG(std::cout << boost::format("Assign alias: replacing %s with %s\n")
+                           % graph[varToReplace].getName() % graph[varToUse].getName());
+      BGL_FORALL_INEDGES(varToReplace, inEdge, graph, InternalGraph) {
+        boost::add_edge(boost::source(inEdge, graph), varToUse, graph);
+      }
+      BGL_FORALL_OUTEDGES(varToReplace, outEdge, graph, InternalGraph) {
+        boost::add_edge(varToUse, boost::target(outEdge, graph), graph);
+      }
+      boost::remove_vertex(varToReplace, graph);
+      count++;
+    }
+  }
+  DEBUG(std::cout << boost::format("Merged %d assign alias nodes\n") % count);
+}
+
 /// Register vertices are split into 'destination' registers only with in edges
 /// and 'source' registers only with out edges. This implies graph connectivity
 /// follows combinatorial paths in the netlist and allows traversals of the
@@ -62,7 +104,7 @@ public:
 void Graph::splitRegVertices() {
   BGL_FORALL_VERTICES(v, graph, InternalGraph) {
     if (graph[v].isReg()) {
-      // Collect all adjacent vertices.
+      // Collect all adjacent vertices (to which there are out edges).
       std::vector<VertexID> adjacentVertices;
       BGL_FORALL_ADJ(v, adjVertex, graph, InternalGraph) {
         adjacentVertices.push_back(adjVertex);

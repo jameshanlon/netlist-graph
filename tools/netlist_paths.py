@@ -62,16 +62,18 @@ def dump_path_report(netlist, path, fd):
         args = [iter(iterable)] * n
         return zip_longest(*args, fillvalue=fillvalue)
 
-    rows = []
-    rows.append(('Name', 'Type', 'Statement', 'Location'))
-    rows.append((path[0].get_name(), path[0].get_dtype_str(), '', ''))
-    for stmt, var in grouper(path[1:], 2):
-        rows.append((var.get_name(),
-                     var.get_dtype_str(),
-                     stmt.get_ast_type(),
-                     stmt.get_location_str()))
-    # Write the table out.
-    write_table(rows, fd)
+    #rows = []
+    #rows.append(('Name', 'Type', 'Statement', 'Location'))
+    #rows.append((path[0].get_name(), path[0].get_dtype_str(), '', ''))
+    #for stmt, var in grouper(path[1:], 2):
+    #    rows.append((var.get_name(),
+    #                 var.get_dtype_str(),
+    #                 stmt.get_ast_type(),
+    #                 stmt.get_location_str()))
+    ## Write the table out.
+    #write_table(rows, fd)
+    for node in path:
+        print("{} {}".format(node.get_ast_type(), node.get_name()));
 
 def dump_path_list_report(netlist, paths, fd):
     """

@@ -87,6 +87,7 @@ public:
   VertexID nullVertex() const { return boost::graph_traits<InternalGraph>::null_vertex(); }
   std::size_t numVertices() const { return boost::num_vertices(graph); }
   std::size_t numEdges() const { return boost::num_edges(graph); }
+  void mergeAssignAliasNodes();
   void splitRegVertices();
   void checkGraph() const;
   void dumpDotFile(const std::string &outputFilename) const;

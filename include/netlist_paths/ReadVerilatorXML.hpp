@@ -73,6 +73,8 @@ private:
   void iterateChildren(XMLNode *node);
   Location parseLocation(const std::string location);
   std::string addTopPrefix(std::string name);
+  std::string removeTopPrefix(std::string name);
+  VertexID lookupVarVertexExact(const std::string &name);
   VertexID lookupVarVertex(const std::string &name);
   void newVar(XMLNode *node);
   void newScope(XMLNode *node);
@@ -85,6 +87,7 @@ private:
   void visitTypedef(XMLNode *node);
   void visitAlways(XMLNode *node);
   void visitAssign(XMLNode *node);
+  void visitAssignAlias(XMLNode *node);
   void visitAssignDly(XMLNode *node);
   void visitInitial(XMLNode *node);
   void visitInstance(XMLNode *node);

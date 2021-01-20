@@ -92,7 +92,7 @@ void ReadVerilatorXML::dispatchVisitor(XMLNode *node) {
   case AstNode::ALWAYS:          visitAlways(node);                      break;
   case AstNode::ALWAYS_PUBLIC:   visitAlways(node);                      break;
   case AstNode::ASSIGN:          visitAssign(node);                      break;
-  case AstNode::ASSIGN_ALIAS:    visitAssign(node);                      break;
+  case AstNode::ASSIGN_ALIAS:    visitAssignAlias(node);                 break;
   case AstNode::ASSIGN_DLY:      visitAssignDly(node);                   break;
   case AstNode::ASSIGN_W:        visitAssign(node);                      break;
   case AstNode::BASIC_DTYPE:     visitBasicDtype(node);                  break;
@@ -159,12 +159,29 @@ std::string ReadVerilatorXML::addTopPrefix(std::string name) {
   return name;
 }
 
+std::string ReadVerilatorXML::removeTopPrefix(std::string name) {
+  size_t pos = name.rfind(topName, 0);
+  if (!topName.empty() && pos == 0) {
+    return name.substr(0, pos+1);
+  }
+  return name;
+}
+
+VertexID ReadVerilatorXML::lookupVarVertexExact(const std::string &name) {
+  // Lookup the vertex name directly.
+  if (vars.count(name)) {
+    return vars[name];
+  }
+  // Not found.
+  return netlist.nullVertex();
+}
+
 VertexID ReadVerilatorXML::lookupVarVertex(const std::string &name) {
   // Lookup the vertex name directly.
   if (vars.count(name)) {
     return vars[name];
   }
-  // Try to remove the top suffix.
+  // Try to add the top suffix.
   auto extendedName = addTopPrefix(name);
   if (vars.count(extendedName)) {
     return vars[extendedName];
@@ -216,6 +233,7 @@ void ReadVerilatorXML::newVar(XMLNode *node) {
         name.rfind("__V", 0) == std::string::npos) {
       if (topName.empty()) {
         topName = name.substr(0, pos);
+        DEBUG(std::cout << "Got top name " << topName << "\n");
       } else {
         assert(topName == name.substr(0, pos) && "all name prefixes should match the top name");
       }
@@ -229,7 +247,7 @@ void ReadVerilatorXML::newVar(XMLNode *node) {
                                      isParam, paramValue, isPublic);
   if (vars.count(canonicalName) == 0) {
     vars[canonicalName] = vertex;
-    DEBUG(std::cout << boost::format("Add var %s (canonical %s)' to scope\n") % name % canonicalName);
+    DEBUG(std::cout << boost::format("Add var %s (canonical %s) to scope\n") % name % canonicalName);
   } else {
     DEBUG(std::cout << boost::format("Var %s (canonical %s) already exists\n") % name % canonicalName);
   }
@@ -239,7 +257,7 @@ void ReadVerilatorXML::newVar(XMLNode *node) {
   // representation of the netlist.
   if (node->first_attribute("origName")) {
     auto origName = node->first_attribute("origName")->value();
-    auto publicVertex = lookupVarVertex(origName);
+    auto publicVertex = lookupVarVertexExact(origName);
     if (publicVertex != netlist.nullVertex() &&
         publicVertex != vertex &&
         netlist.getVertex(publicVertex).isPort() &&
@@ -351,6 +369,10 @@ void ReadVerilatorXML::visitScope(XMLNode *node) {
 
 void ReadVerilatorXML::visitAssign(XMLNode *node) {
   newStatement(node, VertexAstType::ASSIGN);
+}
+
+void ReadVerilatorXML::visitAssignAlias(XMLNode *node) {
+  newStatement(node, VertexAstType::ASSIGN_ALIAS);
 }
 
 void ReadVerilatorXML::visitAssignDly(XMLNode *node) {
