@@ -321,6 +321,7 @@ public:
 
   /// Various getters and setters.
   void setDeleted() { deleted = true; }
+  void setVar() { astType = VertexAstType::VAR; }
   void setSrcReg() { astType = VertexAstType::SRC_REG; }
   void setDstReg() { astType = VertexAstType::DST_REG; }
   void setDirection(VertexDirection dir) { direction = dir; }

@@ -55,63 +55,85 @@ public:
   }
 };
 
+/// Verilator
 void Graph::mergeAssignAliasNodes() {
-  size_t count = 0;
+  //size_t count = 0;
+  //BGL_FORALL_VERTICES(v, graph, InternalGraph) {
+  //  if (graph[v].getAstType() == VertexAstType::ASSIGN_ALIAS) {
+  //    std::vector<VertexID> sources;
+  //    std::vector<VertexID> targets;
+  //    BGL_FORALL_INEDGES(v, inEdge, graph, InternalGraph) {
+  //      sources.push_back(boost::source(inEdge, graph));
+  //    }
+  //    BGL_FORALL_OUTEDGES(v, outEdge, graph, InternalGraph) {
+  //      targets.push_back(boost::target(outEdge, graph));
+  //    }
+  //    assert(targets.size() == 1);
+  //    if (sources.size() > 1) {
+  //      DEBUG(std::cout << boost::format("srcs %d\n") % sources.size());
+  //      continue;
+  //    }
+  //    VertexID varToReplace = sources.front();
+  //    VertexID varToUse = targets.front();
+  //    if (varToReplace == varToUse) {
+  //      // Self alias.
+  //      continue;
+  //    }
+  //    //if (graph[varToReplace].getName().find("__Vcell") == std::string::npos) {
+  //    //  // Only merge Verilator-generated source variables (since others may represent source relationships).
+  //    //  continue;
+  //    //}
+  //    DEBUG(std::cout << boost::format("Assign alias: replacing %s with %s\n")
+  //                         % graph[varToReplace].getName() % graph[varToUse].getName());
+  //    // Determine the nodes with in and out edges to the var to replace node.
+  //    sources.clear();
+  //    targets.clear();
+  //    BGL_FORALL_INEDGES(varToReplace, inEdge, graph, InternalGraph) {
+  //      sources.push_back(boost::source(inEdge, graph));
+  //    }
+  //    BGL_FORALL_OUTEDGES(varToReplace, outEdge, graph, InternalGraph) {
+  //      targets.push_back(boost::target(outEdge, graph));
+  //    }
+  //    // Update edges while not iterating.
+  //    for (auto source : sources) {
+  //      boost::remove_edge(source, v, graph);
+  //      boost::add_edge(source, varToUse, graph);
+  //    }
+  //    for (auto target : targets) {
+  //      boost::remove_edge(varToReplace, target, graph);
+  //      boost::add_edge(varToUse, target, graph);
+  //    }
+  //    // Just mark the vertex as deleted.
+  //    // If the vertex was a REG then transfer this.
+  //    if (graph[varToReplace].isDstReg()) {
+  //      graph[varToUse].setDstReg();
+  //    }
+  //    graph[varToReplace].setDeleted();
+  //    count++;
+  //  }
+  //}
+  //DEBUG(std::cout << boost::format("Merged %d assign alias nodes\n") % count);
   BGL_FORALL_VERTICES(v, graph, InternalGraph) {
-    if (graph[v].getAstType() == VertexAstType::ASSIGN_ALIAS) {
-      std::vector<VertexID> sources;
+    if (graph[v].isReg()) {
       std::vector<VertexID> targets;
-      BGL_FORALL_INEDGES(v, inEdge, graph, InternalGraph) {
-        sources.push_back(boost::source(inEdge, graph));
-      }
       BGL_FORALL_OUTEDGES(v, outEdge, graph, InternalGraph) {
         targets.push_back(boost::target(outEdge, graph));
       }
-      assert(targets.size() == 1);
-      if (sources.size() > 1) {
-        DEBUG(std::cout << boost::format("srcs %d\n") % sources.size());
-        continue;
-      }
-      VertexID varToReplace = sources.front();
-      VertexID varToUse = targets.front();
-      if (varToReplace == varToUse) {
-        // Self alias.
-        continue;
-      }
-      if (graph[varToReplace].getName().find("__Vcell") == std::string::npos) {
-        // Only merge Verilator-generated source variables.
-        continue;
-      }
-      DEBUG(std::cout << boost::format("Assign alias: replacing %s with %s\n")
-                           % graph[varToReplace].getName() % graph[varToUse].getName());
-      // Determine the nodes with in and out edges to the var to replace node.
-      sources.clear();
-      targets.clear();
-      BGL_FORALL_INEDGES(varToReplace, inEdge, graph, InternalGraph) {
-        sources.push_back(boost::source(inEdge, graph));
-      }
-      BGL_FORALL_OUTEDGES(varToReplace, outEdge, graph, InternalGraph) {
-        targets.push_back(boost::target(outEdge, graph));
-      }
-      // Update edges while not iterating.
-      for (auto source : sources) {
-        boost::remove_edge(source, v, graph);
-        boost::add_edge(source, varToUse, graph);
-      }
+      std::cout << boost::format("REG %s %d targets\n") % graph[v].getName() % targets.size();
       for (auto target : targets) {
-        boost::remove_edge(varToReplace, target, graph);
-        boost::add_edge(varToUse, target, graph);
+      if (graph[target].getAstType() == VertexAstType::ASSIGN_ALIAS) {
+        std::vector<VertexID> assignAliasTargets;
+        BGL_FORALL_OUTEDGES(target, outEdge, graph, InternalGraph) {
+          assignAliasTargets.push_back(boost::target(outEdge, graph));
+        }
+        assert(assignAliasTargets.size() == 1);
+        graph[assignAliasTargets.front()].setDstReg();
+        std::cout << boost::format("Moved REG from %s to %s\n")
+                               % graph[v].getName() % graph[assignAliasTargets.front()].getName();
       }
-      // Just mark the vertex as deleted.
-      // If the vertex was a REG then transfer this.
-      if (graph[varToReplace].isDstReg()) {
-        graph[varToUse].setDstReg();
       }
-      graph[varToReplace].setDeleted();
-      count++;
     }
   }
-  DEBUG(std::cout << boost::format("Merged %d assign alias nodes\n") % count);
 }
 
 /// Register vertices are split into 'destination' registers only with in edges
