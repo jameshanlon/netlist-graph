@@ -44,6 +44,8 @@ private:
 
   bool vertexTypeMatch(VertexID vertex, VertexGraphType graphType) const;
 
+  VertexIDVec getTargetNodes(VertexID vertex) const;
+
   void dumpPath(const VertexIDVec &path) const;
 
   VertexIDVec determinePath(ParentMap &parentMap,
@@ -87,7 +89,7 @@ public:
   VertexID nullVertex() const { return boost::graph_traits<InternalGraph>::null_vertex(); }
   std::size_t numVertices() const { return boost::num_vertices(graph); }
   std::size_t numEdges() const { return boost::num_edges(graph); }
-  void mergeAssignAliasNodes();
+  void propagateRegisters();
   void splitRegVertices();
   void checkGraph() const;
   void dumpDotFile(const std::string &outputFilename) const;

@@ -120,7 +120,7 @@ public:
   Netlist() = delete;
   Netlist(const std::string &filename) {
     ReadVerilatorXML(netlist, files, dtypes, filename);
-    netlist.mergeAssignAliasNodes();
+    netlist.propagateRegisters();
     netlist.splitRegVertices();
     netlist.checkGraph();
   }
